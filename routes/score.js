@@ -54,6 +54,7 @@ router.get('/',auth.ensureToken, cache('0.5 minutes'), apiRequestLimiter, functi
         var player_inn2={}
         var bowl2={}
         var bowl_inn_2 = []
+        
 
         var title = $("h4.ui-header").text();
         var j=1
