@@ -10,6 +10,7 @@ const cache = apicache.middleware
 const matchdata = require('../utlis/app.json');
 const { dummydata } = require('../utlis/error.js');
 const { errormsg } = require('../utlis/msg.js');
+const auth = require('../auth')
 
 const apiRequestLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
@@ -21,7 +22,7 @@ const apiRequestLimiter = rateLimit({
     }
 })
 
-router.get('/', cache('2 minutes'), apiRequestLimiter, function(req, res) {
+router.get('/',auth.ensureToken, cache('0.5 minutes'), apiRequestLimiter, function(req, res) {
     res.header('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers,Content-Type,Access-Control-Allow-Methods, Authorization, X-Requested-With');
     res.header('Access-Control-Allow-Methods', 'GET');
     res.header('X-Frame-Options', 'DENY');
@@ -32,6 +33,8 @@ router.get('/', cache('2 minutes'), apiRequestLimiter, function(req, res) {
 
     let str = req.query.url;
     let live_url = str.replace('www', 'm');
+
+    var commentary = []
 
     axios({
         method: 'GET',
@@ -72,11 +75,17 @@ router.get('/', cache('2 minutes'), apiRequestLimiter, function(req, res) {
         var recentballs = $("span[style='color:#333']").eq(2).text();
         var lastwicket = $("span[style='color:#333']").eq(1).text();
         var runrate = $("span[class='crr']").eq(0).text();
-        var commentary = $("p[class='commtext']").text();
+        var reqrunrate = $("span[class='crr']").eq(1).text();
+
+        for(let i=0;i<12;i++){
+            commentary.push($("p[class='commtext']").eq(i).text())
+        }
+        var potm = $('.list-group:eq(2) > .miniscore-data:eq(1) a').text();
 
         var livescore = ({
             title: title || "Data Not Found",
             update: update || "Data Not Found",
+            potm: potm || "Data Not Found",
             current: currentscore || "Data Not Found",
             batsman: batsman || "Data Not Found",
             batsmanrun: batsmanrun || "Data Not Found",
@@ -104,7 +113,8 @@ router.get('/', cache('2 minutes'), apiRequestLimiter, function(req, res) {
             recentballs: recentballs || "Data Not Found",
             lastwicket: lastwicket || "Data Not Found",
             runrate: runrate || "Data Not Found",
-            commentary: commentary || "Data Not Found"
+            reqrunrate: reqrunrate || "Data Not Found",
+            commentary: commentary.reverse().filter(e=>e!=="") || "Data Not Found"
         });
 
         res.send(JSON.stringify(livescore, null, 4));
